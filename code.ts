@@ -6,25 +6,56 @@
 // full browser environment (see documentation).
 
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__);
-
-figma.ui.postMessage({ type: "selectionChange", data: getComponentSetData()})
+figma.clientStorage.getAsync('preference').then(result=>{
+  figma.showUI(__html__);
+  figma.ui.postMessage({ type: "setup", data: getComponentSetData(), preference: result })
+})
 
 figma.on("selectionchange",()=>{
   figma.ui.postMessage({ type: "selectionChange", data: getComponentSetData()})
 })
 
+// TODO: Setup Default Export Settings
+let defaultExportSettings: ExportSettingsSVG
+
 function getComponentSetData() {
   let selection = figma.currentPage.selection
-  if (selection.length > 0) {
-    let componentSet = selection.filter(layer => (layer.type === "COMPONENT_SET"))
+  let componentSets = selection.filter(layer => (layer.type === "COMPONENT_SET"))
+  if (selection.length == 0) {
+    return null
+  } else if (componentSets.length != 0) {
+    let firstComponentSet = componentSets[componentSets.length - 1] as ComponentSetNode
     return {
-      componentSetLength: componentSet.length,
-      firstComponentSetExportSettings: componentSet[0].exportSettings
+      componentSetsLength: componentSets.length,
+      numberOfComponents: getNumberOfComponents(componentSets),
+      firstComponentSet: {
+        metaData: getDataFromComponent(firstComponentSet.children[0])
+      }
     }
   } else {
+    // need to update UI to communicate that the layers that were selected don't contain any variants
     return null
   }
+}
+
+function getNumberOfComponents(componentSets) {
+  let counter = 0
+  componentSets.forEach(componentSet=>{
+    counter += componentSet.children.length
+  })
+  return counter
+}
+
+function getDataFromComponent(component) {
+  let parentName = component.parent.name
+  let parts = component.name.split(", ")
+  let variants = []
+  
+  parts.forEach(partText=> {
+      let splitText = partText.split('=')
+      variants.push(splitText[1])
+  })
+  return {name: parentName, variants: variants}
 }
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
@@ -33,20 +64,17 @@ function getComponentSetData() {
 figma.ui.onmessage = msg => {
   // One way of distinguishing between different types of messages sent from
   // your HTML page is to use an object with a "type" property like this.
-  if (msg.type === 'create-rectangles') {
-    const nodes: SceneNode[] = [];
-    for (let i = 0; i < msg.count; i++) {
-      const rect = figma.createRectangle();
-      rect.x = i * 150;
-      rect.fills = [{type: 'SOLID', color: {r: 1, g: 0.5, b: 0}}];
-      figma.currentPage.appendChild(rect);
-      nodes.push(rect);
-    }
-    figma.currentPage.selection = nodes;
-    figma.viewport.scrollAndZoomIntoView(nodes);
+  if (msg.type === 'preference') {
+    figma.clientStorage.setAsync("preference", msg.preference)
   }
 
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
+  if (msg.type === 'export') {
+    console.log(msg.selection)
+    // get all the stuff ansync
+
+    // move this into the then
+    setTimeout(()=>{
+      figma.ui.postMessage({ type: "download", data: null })
+    }, 1000)
+  }
 };
