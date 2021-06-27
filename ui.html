@@ -1,0 +1,180 @@
+<style>
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #assetHeading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .asset {
+    display: grid;
+    grid-template-columns: 60px 80px 60px auto 24px 24px;
+    grid-template-rows: 24px auto;
+    column-gap: 4px;
+  }
+
+  .assetScale { grid-area: 1 / 1 / 1 / 1; }
+
+  .assetPrefix { grid-area: 1 / 2 / 1 / 2;}
+
+  .assetType { grid-area: 1 / 3 / 1 / 3; }
+
+  .assetSettingsButton { grid-area: 1 / 5 / 1 / 5; }
+
+  .assetSettingsButton[value=ON] {
+    background-color: red;
+  }
+
+  .assetRemoveButton { grid-area: 1 / 6 / 1 / 6; }
+
+  .assetSettings {
+    grid-area: 2 / 1 / 2 / 7;
+    flex-direction: column;
+    display: none;
+    margin-top: 4px;
+  }
+
+  .showAssetSettings {
+    display: flex;
+  }
+
+  hr {
+    width: 100%;
+    height: 1px;
+    background-color: #e5e5e5;
+    border: none;
+    padding: 0;
+    margin: 4px 0;
+  }
+</style>
+
+<p id='layerText'>Nothing selected</p>
+
+<div id="assetSection">
+  <div id="assetHeading">
+      <h3>Asset Type</h3>
+      <button id="addAsset">Add</button>
+  </div>
+
+  <div id="assets">
+    <div id="defaultAsset" class="asset">
+      <input class="assetScale" type="text" value="1x" id="assetScale--asset1">
+      <input class="assetPrefix" type="text" placeholder="Suffix" id="assetPrefix--asset1">
+      <select class="assetType" name="assetType--asset1" id="assetType--asset1">
+        <option value="png">PNG</option>
+        <option value="jpg">JPG</option>
+        <option value="svg" selected>SVG</option>
+        <option value="pdf">PDF</option>
+      </select>
+      <button class="assetSettingsButton" id="settingsButton--asset1" value='OFF'>⚙️</button>
+      <button class="assetRemoveButton" id="removeButton--asset1">X</button>
+      <div class="assetSettings" id='assetSettings--asset1'>
+        <label for="contentsOnly--asset1"><input id="contentsOnly--asset1" type="checkbox" checked
+            title="Only include the selected layers in the export. Any other objects that intersect or overlap the selected object will not affect the export.">Ingore
+          overlapping layers</label>
+        <label for="useAbsoluteBounds--asset1"><input id="useAsboluteBounds--asset1" type="checkbox" checked
+            title="Empty space between the characters and the bounding box will be trimmed.">Trim Text Layers</label>
+        <hr>
+        <label for="idAttribute--asset1"><input id="idAttribute--asset1" type="checkbox"
+            title="Add an 'id' tag to the SVG's metadata based on the object’s name.">Include "id" attribute</label>
+        <label for="outlineText--asset1"><input id="outlineText--asset1" type="checkbox" checked
+            title="Convert any text layers to glyphs. Uncheck this to preserve text editing in other systems.">Outline
+          Text</label>
+        <label for="simplifyStroke--asset1"><input id="simplifyStroke--asset1" type="checkbox" checked
+            title="because SVGs only support center strokes, this will automatically approximate the original path to simplify the output.">Simplify
+          Stroke</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="propertySetting">
+  <p>Use Properties For</p>
+  <label for="folders">Folders<input type="radio" name="propertySetting" value="folders" id="folders" checked></label>
+  <label for="filenames">Files Names<input type="radio" name="propertySetting" value="filenames" id="filenames"></label>
+</div>
+
+
+<button id="create">Create</button>
+<button id="cancel">Cancel</button>
+<script>
+
+
+// Setup UI
+let settingsButton = document.getElementById('settingsButton--asset1')
+let assetSettings = document.getElementById('assetSettings--asset1')
+
+let assets = document.getElementById('assets')
+let layerText = document.getElementById('layerText')
+
+// Setup click hanlder for add asset button
+
+// Setup click handlers the default asset
+settingsButton.addEventListener('click', ()=>{
+  assetSettings.classList.toggle('showAssetSettings')
+  if (settingsButton.value === "OFF") {
+    settingsButton.value = "ON"
+  } else {
+    settingsButton.value = "OFF"
+  }
+})
+
+let defaultAssetClone = document.getElementById('defaultAsset').cloneNode()
+
+/*
+{
+  format: "JPG", "PNG", "SVG", "PDF"
+  constraint: {type: "SCALE" | "WIDTH" | "HEIGHT", value: number},
+}
+*/
+function createNewAsset(assetSettings,index) {
+  let cln = defaultAssetClone.cloneNode()
+  let assetScaleInput = cln.getElementById('assetScale')
+  assetScaleInput.value = assetSettings.constraint.value || "1x"
+  index != null ?? (assetScaleInput.id = `assetScale--asset${index}`) || (assetScaleInput.id = "assetScale--asset1")
+}
+
+
+onmessage = (event) => {
+  if (event.data.pluginMessage.type === 'selectionChange') {
+    let message = event.data.pluginMessage
+    console.log(message.data.firstComponentSetExportSettings)
+    if (message.data != null) {
+      layerText.innerHTML = `Number of Component Sets: ${message.data.componentSetLength}`
+
+      setupDefaultExportSettings(message.data.firstComponentSetExportSettings)
+    } else {
+      layerText.innerHTML = "Nothing selected"
+    }
+  }
+}
+
+function setupDefaultExportSettings(exportSettings) {
+
+  assets.innerHTML = ''
+
+  if (exportSettings) {
+
+  } else {
+    assets.appendChild(defaultAssetClone)
+  }
+}
+
+document.getElementById('create').onclick = () => {
+  //const textbox = document.getElementById('count');
+  //const count = parseInt(textbox.value, 10);
+  //parent.postMessage({ pluginMessage: { type: 'create-rectangles', count } }, '*')
+}
+
+document.getElementById('cancel').onclick = () => {
+  //parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
+}
+
+</script>
