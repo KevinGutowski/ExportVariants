@@ -1,7 +1,6 @@
 import './ui.css'
 
 var JSZip = require('jszip')
-var FileSaver = require('file-saver')
 
 let layerText = document.getElementById('layerText')
 let folderOption = document.getElementById('folders') as HTMLInputElement
@@ -112,7 +111,7 @@ onmessage = (event) => {
 
             // perform download
             zip.generateAsync({type:'blob'}).then(blob=>{
-                FileSaver.saveAs(blob,'Export.zip')
+                save(blob, 'Export.zip')
 
                 exportButton.disabled = false
                 folderOption.disabled = false
@@ -129,12 +128,37 @@ onmessage = (event) => {
 
             // perform download
             zip.generateAsync({ type: 'blob' }).then(blob => {
-                FileSaver.saveAs(blob, 'Export.zip')
+                save(blob, 'Export.zip')
 
                 exportButton.disabled = false
                 folderOption.disabled = false
                 filenameOption.disabled = false
             })
         }
+    }
+}
+
+function save(blob, filename) {
+    if (typeof navigator.msSaveOrOpenBlob !== 'undefined') {
+        return navigator.msSaveOrOpenBlob(blob, filename);
+    } else if (typeof navigator.msSaveBlob !== 'undefined') {
+        return navigator.msSaveBlob(blob, filename);
+    } else {
+        var elem: HTMLAnchorElement = window.document.createElement('a')
+        elem.href = window.URL.createObjectURL(blob)
+        elem.download = filename
+        elem.setAttribute('style', 'display:none;opacity:0;color:transparent;');
+        (document.body || document.documentElement).appendChild(elem)
+        if (typeof elem.click === 'function') {
+            elem.click();
+        } else {
+            elem.target = '_blank'
+            elem.dispatchEvent(new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true
+            }))
+        }
+        URL.revokeObjectURL(elem.href)
     }
 }
