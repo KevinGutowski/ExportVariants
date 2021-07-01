@@ -1,6 +1,7 @@
 import './ui.css'
 
 var JSZip = require('jszip')
+var FileSaver = require('file-saver')
 
 let layerText = document.getElementById('layerText')
 let folderOption = document.getElementById('folders') as HTMLInputElement
@@ -45,6 +46,8 @@ function exportVariants() {
     if (filenameOption.checked) { selection = 'filenames' } else { selection = 'folders' }
     parent.postMessage({ pluginMessage: { type: 'export', selection } }, '*')
     exportButton.disabled = true
+    folderOption.disabled = true
+    filenameOption.disabled = true
 }
 
 
@@ -90,8 +93,6 @@ onmessage = (event) => {
             exampleText.innerHTML = ""
             exportCountText.innerHTML = ""
             exportButton.disabled = true
-            folderOption.disabled = true
-            filenameOption.disabled = true
         }
     }
 
@@ -99,22 +100,41 @@ onmessage = (event) => {
         let data = event.data.pluginMessage.data
         let svgDataArray = data.svgDataArray
         let variantDataArray = data.variantDataArray // {componentName: string, variantSubstring: string}
-
+        
         // build zip file
         var zip = new JSZip()
         if (preference === "filenames") {
             let folder = zip.folder('Export')
             data.svgDataArray.forEach((svgData,index)=>{
+                let fileName = `${variantDataArray[index].componentName}-${variantDataArray[index].variantSubstring}.svg`
+                folder.file(fileName,svgData,{base64:true})
+            })
+
+            // perform download
+            zip.generateAsync({type:'blob'}).then(blob=>{
+                FileSaver.saveAs(blob,'Export.zip')
+
+                exportButton.disabled = false
+                folderOption.disabled = false
+                filenameOption.disabled = false
             })
         } else {
             // folders
+            data.svgDataArray.forEach((svgData,index)=>{
+                let folderName = `${variantDataArray[index].variantSubstring}`
+                let folder = zip.folder(folderName)
+                let fileName = `${variantDataArray[index].componentName}.svg`
+                folder.file(fileName,svgData,{base64:true})
+            })
 
+            // perform download
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                FileSaver.saveAs(blob, 'Export.zip')
+
+                exportButton.disabled = false
+                folderOption.disabled = false
+                filenameOption.disabled = false
+            })
         }
-
-        // perform download
-
-        exportButton.disabled = false
-        folderOption.disabled = false
-        filenameOption.disabled = false
     }
 }
