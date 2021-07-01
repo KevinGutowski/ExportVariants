@@ -1,5 +1,7 @@
 import './ui.css'
 
+var JSZip = require('jszip')
+
 let layerText = document.getElementById('layerText')
 let folderOption = document.getElementById('folders') as HTMLInputElement
 let filenameOption = document.getElementById('filenames') as HTMLInputElement
@@ -94,15 +96,22 @@ onmessage = (event) => {
     }
 
     if (messageType === 'download') {
-        let message = event.data.pluginMessage
+        let data = event.data.pluginMessage.data
+        let svgDataArray = data.svgDataArray
+        let variantDataArray = data.variantDataArray // {componentName: string, variantSubstring: string}
 
-        // perform download
+        // build zip file
+        var zip = new JSZip()
         if (preference === "filenames") {
-            
+            let folder = zip.folder('Export')
+            data.svgDataArray.forEach((svgData,index)=>{
+            })
         } else {
             // folders
 
         }
+
+        // perform download
 
         exportButton.disabled = false
         folderOption.disabled = false

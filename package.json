@@ -12,6 +12,7 @@
         "@figma/plugin-typings": "^1.25.0",
         "css-loader": "^5.2.6",
         "html-webpack-plugin": "^5.3.2",
+        "jszip": "^3.6.0",
         "react-dev-utils": "^11.0.4",
         "style-loader": "^3.0.0",
         "ts-loader": "^9.2.3",
