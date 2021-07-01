@@ -8,6 +8,7 @@ let exportButton = document.getElementById('export') as HTMLInputElement
 let exportCountText = document.getElementById('itemsToExport')
 
 let exampleTextOptions = ["", ""]
+let preference = ""
 // first option is the example text for folders
 // {prop_x.variant_x}-{prop_y.variant_y}-{prop_z.variant_z}/{component_name}.svg
 // section option is the example text for filenames
@@ -15,8 +16,6 @@ let exampleTextOptions = ["", ""]
 
 function updateDisplayOfExampleOutput() {
     // looks at radioOptions and swaps to the proper text option
-    let preference
-
     if (filenameOption.checked) {
         exampleText.innerHTML = exampleTextOptions[1]
         preference = 'filenames'
@@ -30,20 +29,11 @@ function updateDisplayOfExampleOutput() {
 
 function updateTextOfExampleOutput(metaData) {
     // Updates the example text array
-    console.log("updateTextOfExampleOutput")
+    let name = metaData.componentName
+    let variantSubstring = metaData.variantSubstring
 
-    let name = metaData.name
-    let fileNameString = name
-
-    let combinedVariants = ""
-    metaData.variants.forEach(variant => {
-        let bools = ["yes", "no", "true", "false"]
-        if (bools.indexOf(variant.toLowerCase()) === -1) {
-            combinedVariants += `-${variant.toLowerCase()}`
-        }
-    })
-    exampleTextOptions[0] = `${combinedVariants.substring(1)}/${name}.svg`
-    exampleTextOptions[1] = `${name}${combinedVariants}.svg`
+    exampleTextOptions[0] = `${variantSubstring}/${name}.svg`
+    exampleTextOptions[1] = `${name}-${variantSubstring}.svg`
 
     updateDisplayOfExampleOutput()
 }
@@ -98,13 +88,24 @@ onmessage = (event) => {
             exampleText.innerHTML = ""
             exportCountText.innerHTML = ""
             exportButton.disabled = true
+            folderOption.disabled = true
+            filenameOption.disabled = true
         }
     }
 
     if (messageType === 'download') {
         let message = event.data.pluginMessage
+
         // perform download
+        if (preference === "filenames") {
+            
+        } else {
+            // folders
+
+        }
+
         exportButton.disabled = false
-        console.log(`perform download with data ${message.data}`)
+        folderOption.disabled = false
+        filenameOption.disabled = false
     }
 }

@@ -9,14 +9,15 @@ figma.on("selectionchange",()=>{
 
 // TODO: Setup Default Export Settings
 let defaultExportSettings: ExportSettingsSVG
+let componentSets: [ComponentSetNode]
 
 function getComponentSetData() {
   let selection = figma.currentPage.selection
-  let componentSets = selection.filter(layer => (layer.type === "COMPONENT_SET"))
+  componentSets = selection.filter(layer => (layer.type === "COMPONENT_SET")) as [ComponentSetNode]
   if (selection.length == 0) {
     return null
-  } else if (componentSets.length != 0) {
-    let firstComponentSet = componentSets[componentSets.length - 1] as ComponentSetNode
+  } else if (componentSets.length > 0) {
+    let firstComponentSet = componentSets[componentSets.length - 1]
     return {
       componentSetsLength: componentSets.length,
       numberOfComponents: getNumberOfComponents(componentSets),
@@ -41,13 +42,31 @@ function getNumberOfComponents(componentSets) {
 function getDataFromComponent(component) {
   let parentName = component.parent.name
   let parts = component.name.split(", ")
+
+  let properties = []
   let variants = []
   
   parts.forEach(partText=> {
       let splitText = partText.split('=')
       variants.push(splitText[1])
+      properties.push(splitText[0])
   })
-  return {name: parentName, variants: variants}
+
+  let variantSubstring = ""
+  let bools = ["yes", "true", "no", "false"]
+  let falses = ["no", "false"]
+  variants.forEach((variant,index)=>{
+    if (bools.indexOf(variant.toLowerCase()) === -1) {
+      variantSubstring += `-${variant.toLowerCase()}`
+    } else {
+      if (falses.indexOf(variant.toLowerCase()) === -1) {
+        variantSubstring += `-${properties[index].toLowerCase()}`
+      }
+    }
+  })
+  // ex: -variant1-variant2-variant3...
+  variantSubstring = variantSubstring.substring(1) // remove first '-'
+  return {componentName: parentName, variantSubstring: variantSubstring}
 }
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
@@ -61,12 +80,29 @@ figma.ui.onmessage = msg => {
   }
 
   if (msg.type === 'export') {
-    console.log(msg.selection)
-    // get all the stuff ansync
+    // get all the stuff ansync from componentsets
 
-    // move this into the then
-    setTimeout(()=>{
-      figma.ui.postMessage({ type: "download", data: null })
-    }, 1000)
+    let promises = []
+    let variantDataArray = []
+    componentSets.forEach(componentSet => {
+      componentSet.children.forEach(variant => {
+        let svgPromise = variant.exportAsync({format: "SVG"})
+        let variantData = getDataFromComponent(variant)
+        variantDataArray.push(variantData)
+        promises.push(svgPromise)
+      })
+    })
+
+    // resolve all promises
+    Promise.all(promises).then(svgDataArray=>{
+      figma.ui.postMessage({
+        type: "download",
+        data: {
+          svgDataArray: svgDataArray,
+          variantDataArray: variantDataArray
+        }
+      })
+    })
+
   }
 };
