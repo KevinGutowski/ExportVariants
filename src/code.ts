@@ -7,8 +7,6 @@ figma.on("selectionchange",()=>{
   figma.ui.postMessage({ type: "selectionChange", data: getComponentSetData()})
 })
 
-// TODO: Setup Default Export Settings
-let defaultExportSettings: ExportSettingsSVG
 let componentSets: [ComponentSetNode]
 
 function getComponentSetData() {
@@ -40,7 +38,7 @@ function getNumberOfComponents(componentSets) {
 }
 
 function getDataFromComponent(component) {
-  let parentName = component.parent.name
+  let parentName = component.parent.name.toLowerCase()
   let parts = component.name.split(", ")
 
   let properties = []

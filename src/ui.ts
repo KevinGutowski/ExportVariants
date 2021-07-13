@@ -84,11 +84,11 @@ onmessage = (event) => {
                 exportButton.disabled = true
             } else {
                 updateTextOfExampleOutput(message.data.firstComponentSet.metaData)
-                exportCountText.innerHTML = `Number of variants: ${message.data.numberOfComponents}`
+                exportCountText.innerHTML = `Number of Variants: ${message.data.numberOfComponents}`
                 exportButton.disabled = false
             }
         } else {
-            layerText.innerHTML = "Nothing selected"
+            layerText.innerHTML = "No symbol sets with variants selected."
             exampleText.innerHTML = ""
             exportCountText.innerHTML = ""
             exportButton.disabled = true
